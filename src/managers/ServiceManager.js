@@ -49,9 +49,9 @@ class ServiceManager{
         else{return null} 
     }
 }
+export default ServiceManager;
 
-
-const servicios = new ServiceManager();
+/*const servicios = new ServiceManager();
 const ver = servicios.createService("Clinico","MedicoClinico",3000,true)
 //const ver = servicios.getServices();
-console.log(ver);
+console.log(ver);*/
