@@ -1,3 +1,4 @@
+import { error } from "console";
 import crypto from "crypto"
 class ServiceManager{
     
@@ -16,13 +17,20 @@ class ServiceManager{
 
     }
 
-    createService(name,description,price,availtable){
+    addService(serviceData){
+        
+        if(!serviceData.name ||!serviceData.description || !serviceData.duration || !serviceData.price || !serviceData.category || serviceData.available == undefined){
+            throw new error ("Campos incompletos")
+        }
+        
         const newService={
             id: crypto.randomUUID(),
-            name: name,
-            description:description,
-            price,price,
-            availtable:availtable
+            name: serviceData.name,
+            description:serviceData.description,
+            duration:serviceData.duration,
+            price:serviceData.price,
+            category:serviceData.category,
+            available: serviceData.available
         };
         this.service.push(newService);
         return newService;
@@ -51,7 +59,3 @@ class ServiceManager{
 }
 export default ServiceManager;
 
-/*const servicios = new ServiceManager();
-const ver = servicios.createService("Clinico","MedicoClinico",3000,true)
-//const ver = servicios.getServices();
-console.log(ver);*/
