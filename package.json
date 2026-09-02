@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev":"node --watch server"
+    "dev": "node --watch server"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/tiniaAa/Node-CoderHouse/issues"
   },
-  "homepage": "https://github.com/tiniaAa/Node-CoderHouse#readme"
+  "homepage": "https://github.com/tiniaAa/Node-CoderHouse#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
 }

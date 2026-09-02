@@ -38,10 +38,16 @@ class ServiceManager{
         service.description = data.description ?? service.description;
         service.price = data.price ?? service.price;
         service.availtable = data.availtable ?? service.availtable
-
+        return service;
     }
 
-
+    deleteService(name){
+        const indice = this.service.findIndex(service=> service.name=== name);
+        if(indice!=-1){
+            return this.service.splice(indice,1)[0];
+        }
+        else{return null} 
+    }
 }
 
 
