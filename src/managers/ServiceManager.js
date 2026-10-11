@@ -1,59 +1,74 @@
+import crypto from "crypto";
 
-import crypto from "crypto"
-class ServiceManager{
-    constructor(){
-        this.service = [];
-
+class ServiceManager {
+    constructor() {
+        this.services = [];
     }
 
-    getServices(){
-        return this.service;
-    }
-    
-    getServicesById(id){
-        return this.service.find(service=> service.id == id);
+    getServices(filters = {}) {
+        let result = this.services;
 
-    }
-
-    addService(serviceData){
-        
-        if(!serviceData.name ||!serviceData.description || !serviceData.duration || !serviceData.price || !serviceData.category || serviceData.available == undefined){
-            throw new Error ("Campos incompletos")
+        if (filters.category) {
+            result = result.filter(service =>
+                service.category.toLowerCase() === filters.category.toLowerCase()
+            );
         }
-        
-        const newService={
+
+        if (filters.available !== undefined) {
+            const isAvailable = filters.available === "true" || filters.available === true;
+            result = result.filter(service => service.available === isAvailable);
+        }
+
+        return result;
+    }
+
+    getServicesById(id) {
+        return this.services.find(service => service.id === id);
+    }
+
+    addService(serviceData) {
+        const { name, description, duration, price, category, available } = serviceData;
+
+        if (!name || !description || !duration || price === undefined || !category || available === undefined) {
+            throw new Error("Campos incompletos obligatorios");
+        }
+
+        const newService = {
             id: crypto.randomUUID(),
-            name: serviceData.name,
-            description:serviceData.description,
-            duration:serviceData.duration,
-            price:serviceData.price,
-            category:serviceData.category,
-            available: serviceData.available
+            name,
+            description,
+            duration,
+            price: Number(price),
+            category,
+            available: Boolean(available)
         };
-        this.service.push(newService);
+
+        this.services.push(newService);
         return newService;
     }
 
-    updateService(id,data){
+    updateService(id, data) {
         const service = this.getServicesById(id);
+        if (!service) return null;
 
-        if(!service){
-            return null;
-        }
-        service.name= data.name ?? service.name;
+        // Se ignora deliberadamente cualquier intento de sobreescribir el id
+        service.name = data.name ?? service.name;
         service.description = data.description ?? service.description;
-        service.price = data.price ?? service.price;
-        service.availtable = data.availtable ?? service.availtable
+        service.duration = data.duration ?? service.duration;
+        service.price = data.price !== undefined ? Number(data.price) : service.price;
+        service.category = data.category ?? service.category;
+        service.available = data.available !== undefined ? Boolean(data.available) : service.available;
+
         return service;
     }
 
-    deleteService(name){
-        const indice = this.service.findIndex(service=> service.name=== name);
-        if(indice!=-1){
-            return this.service.splice(indice,1)[0];
+    deleteService(id) {
+        const index = this.services.findIndex(service => service.id === id);
+        if (index !== -1) {
+            return this.services.splice(index, 1)[0];
         }
-        else{return null} 
+        return null;
     }
 }
-export default ServiceManager;
 
+export default ServiceManager;
