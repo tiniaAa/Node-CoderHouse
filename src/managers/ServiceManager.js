@@ -1,8 +1,6 @@
-import { error } from "console";
+
 import crypto from "crypto"
 class ServiceManager{
-    
-
     constructor(){
         this.service = [];
 
@@ -13,14 +11,14 @@ class ServiceManager{
     }
     
     getServicesById(id){
-        return this.service.find(service=> service.id === id);
+        return this.service.find(service=> service.id == id);
 
     }
 
     addService(serviceData){
         
         if(!serviceData.name ||!serviceData.description || !serviceData.duration || !serviceData.price || !serviceData.category || serviceData.available == undefined){
-            throw new error ("Campos incompletos")
+            throw new Error ("Campos incompletos")
         }
         
         const newService={
