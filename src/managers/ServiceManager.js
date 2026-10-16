@@ -1,12 +1,22 @@
 import crypto from "crypto";
+import fs from "fs/promises";
 
 class ServiceManager {
-    constructor() {
-        this.services = [];
+    constructor(path) {
+        this.path= path;
     }
 
-    getServices(filters = {}) {
-        let result = this.services;
+    async #readServices(){
+        const data = await fs.readFile(this.path,"utf-8");
+        return JSON.parse(data);
+    }
+
+    async #writeServices(service){
+        await fs.writeFile(this.path,JSON.stringify(service,null,2));
+    }
+
+    async getServices(filters = {}) {
+        let result = await this.#readServices();
 
         if (filters.category) {
             result = result.filter(service =>
@@ -19,55 +29,59 @@ class ServiceManager {
             result = result.filter(service => service.available === isAvailable);
         }
 
-        return result;
+        return await result;
     }
 
-    getServicesById(id) {
-        return this.services.find(service => service.id === id);
+    async getServicesById(id) {
+        const services = await this.#readServices();
+        return services.find(service => service.id === id);
     }
 
-    addService(serviceData) {
+    async addService(serviceData) {
+        const services = await this.#readServices();
         const { name, description, duration, price, category, available } = serviceData;
-
         if (!name || !description || !duration || price === undefined || !category || available === undefined) {
             throw new Error("Campos incompletos obligatorios");
         }
+        const newService={
+            id:crypto.randomUUID(),
+            name:name,
+            description:description,
+            duration:duration,
+            price:price,
+            category:category,
+            available:available
 
-        const newService = {
-            id: crypto.randomUUID(),
-            name,
-            description,
-            duration,
-            price: Number(price),
-            category,
-            available: Boolean(available)
         };
 
-        this.services.push(newService);
+        services.push(newService);
+        await this.#writeServices(services);
         return newService;
+
     }
 
-    updateService(id, data) {
-        const service = this.getServicesById(id);
-        if (!service) return null;
-
-        // Se ignora deliberadamente cualquier intento de sobreescribir el id
-        service.name = data.name ?? service.name;
-        service.description = data.description ?? service.description;
-        service.duration = data.duration ?? service.duration;
-        service.price = data.price !== undefined ? Number(data.price) : service.price;
-        service.category = data.category ?? service.category;
-        service.available = data.available !== undefined ? Boolean(data.available) : service.available;
-
-        return service;
-    }
-
-    deleteService(id) {
-        const index = this.services.findIndex(service => service.id === id);
-        if (index !== -1) {
-            return this.services.splice(index, 1)[0];
+    async updateService(id, data) {
+        const services = await this.#readServices();
+        const index = services.findIndex(service=> service.id === id);
+        if(index === -1){return null;}
+        services[index]={
+            ...services[index],
+            ...data,
+            id: services[index].id
         }
-        return null;
+        await this.#writeServices(services)
+        return services[index]
+    }
+
+    async deleteService(id) {
+        const services= await this.#readServices();
+        const index = services.findIndex(service => service.id === id);
+        if (index === -1) {
+            return null;
+        }
+        const deletedService = services.splice(index,1)[0];
+        await this.#writeServices(services);
+        return deletedService;
     }
 }
 

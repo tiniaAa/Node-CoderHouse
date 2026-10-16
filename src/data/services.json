@@ -1,0 +1,20 @@
+[
+  {
+    "id": "277681f4-82c7-4c78-836b-b97c265b2913",
+    "name": "tini",
+    "description": "tasd",
+    "duration": "312222",
+    "price": 1111,
+    "category": " ddddd",
+    "available": true
+  },
+  {
+    "id": "6b5caa25-800b-4d9a-b9fe-714644efcd32",
+    "name": "pedro",
+    "description": "tasdddddddd",
+    "duration": "312222",
+    "price": 1111,
+    "category": " ddddd",
+    "available": true
+  }
+]
