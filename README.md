@@ -1,6 +1,6 @@
 # 🚀 API de Gestión de Servicios y Reservas - Sistema de Turnos
 
-API REST desarrollada con Node.js, Express y FileSystem que gestiona dos recursos principales — **servicios** y **reservas** — con persistencia en archivos JSON.
+API REST desarrollada con Node.js, Express y FileSystem que gestiona dos recursos principales — **servicios** y **reservas** — estructurada en tres capas (Routes, Controllers y Managers) con persistencia en archivos JSON.
 
 ---
 
@@ -10,6 +10,9 @@ API REST desarrollada con Node.js, Express y FileSystem que gestiona dos recurso
 src/
   config/
     env.config.js
+  controllers/
+    services.controller.js
+    bookings.controller.js
   data/
     services.json
     bookings.json
@@ -28,6 +31,15 @@ package.json
 .gitignore
 README.md
 ```
+
+---
+
+## 🏛️ Arquitectura en Capas
+
+El proyecto está diseñado bajo el principio de separación de responsabilidades:
+1. **Rutas (`src/routes/`)**: Definen los endpoints y los vinculan directamente con sus funciones controladoras correspondientes, sin lógica de negocio ni manejo directo de peticiones.
+2. **Controladores (`src/controllers/`)**: Reciben los objetos `req` y `res`, procesan parámetros (`params`, `query`, `body`), delegan las operaciones a los managers y devuelven las respuestas con los códigos de estado HTTP apropiados (`200`, `201`, `400`, `404`, `500`).
+3. **Managers (`src/managers/`)**: Contienen exclusivamente la lógica de negocio y persistencia en los archivos JSON (`services.json` y `bookings.json`) sin interacción con Express (`req`/`res`).
 
 ---
 
