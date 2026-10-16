@@ -1,6 +1,8 @@
-# 🚀 API de Gestión de Servicios - Turnos y Reservas
+# 🚀 API de Gestión de Servicios y Reservas - Sistema de Turnos
 
-API REST desarrollada con Node.js y Express para la gestión de servicios dentro del Sistema de Turnos y Reservas.
+API REST desarrollada con Node.js, Express y FileSystem que gestiona dos recursos principales — **servicios** y **reservas** — con persistencia en archivos JSON.
+
+---
 
 ## 📁 Estructura del Proyecto
 
@@ -8,10 +10,17 @@ API REST desarrollada con Node.js y Express para la gestión de servicios dentro
 src/
   config/
     env.config.js
+  data/
+    services.json
+    bookings.json
   managers/
     ServiceManager.js
+    BookingManager.js
+  middleware/
+    rotingDetector.js
   routes/
     services.router.js
+    bookings.router.js
   app.js
   server.js
 package.json
@@ -19,6 +28,8 @@ package.json
 .gitignore
 README.md
 ```
+
+---
 
 ## ⚙️ Instalación y Configuración
 
@@ -39,41 +50,75 @@ README.md
    NODE_ENV=development
    ```
 
+---
+
 ## 🚀 Ejecución
 
-- Modo desarrollo (con recarga automática):
+- **Modo desarrollo** (con recarga automática):
   ```bash
   npm run dev
   ```
-- Modo producción:
+- **Modo producción**:
   ```bash
   npm start
+  ```
+- **Tests**:
+  ```bash
+  npm test
   ```
 
 ---
 
 ## 📡 Endpoints de la API
 
-La ruta base para los servicios es `/api/services`.
+### 1. Servicios (`/api/services`)
 
 | Método | Endpoint | Descripción | Códigos HTTP |
 | :--- | :--- | :--- | :--- |
-| **GET** | `/api/services` | Obtiene todos los servicios. Admite filtros por query params (`?category=...`, `?available=true\|false`). | `200 OK`, `500 Internal Server Error` |
-| **GET** | `/api/services/:sid` | Obtiene un servicio específico por su ID (`sid`). | `200 OK`, `404 Not Found` |
-| **POST** | `/api/services` | Crea un nuevo servicio. El `id` se genera automáticamente. | `201 Created`, `400 Bad Request` |
-| **PUT** | `/api/services/:sid` | Actualiza los datos de un servicio sin permitir modificar su `id`. | `200 OK`, `400 Bad Request`, `404 Not Found` |
+| **GET** | `/api/services` | Devuelve todos los servicios. Acepta filtros por query params (`?category=...`, `?available=true\|false`). | `200 OK`, `500 Internal Server Error` |
+| **GET** | `/api/services/:sid` | Devuelve un servicio por su ID. | `200 OK`, `404 Not Found` |
+| **POST** | `/api/services` | Crea un servicio con datos del body. El `id` se genera automáticamente. | `201 Created`, `400 Bad Request` |
+| **PUT** | `/api/services/:sid` | Actualiza un servicio sin permitir modificar su `id`. | `200 OK`, `400 Bad Request`, `404 Not Found` |
 | **DELETE** | `/api/services/:sid` | Elimina un servicio por su `id`. | `200 OK`, `404 Not Found` |
 
-### 📝 Estructura del recurso "Service"
-
+#### Estructura del recurso `Service`:
 ```json
 {
-  "id": "e2f11c79-b1d5-455b-bf78-efca05c4cb84",
+  "id": "277681f4-82c7-4c78-836b-b97c265b2913",
   "name": "Consulta Médica",
   "description": "Atención médica general",
-  "duration": 30,
+  "duration": "30 minutos",
   "price": 3000,
   "category": "Salud",
   "available": true
+}
+```
+
+---
+
+### 2. Reservas (`/api/bookings`)
+
+| Método | Endpoint | Descripción | Códigos HTTP |
+| :--- | :--- | :--- | :--- |
+| **GET** | `/api/bookings` | Devuelve todas las reservas creadas. | `200 OK`, `500 Internal Server Error` |
+| **GET** | `/api/bookings/:bid` | Devuelve una reserva específica por su ID. | `200 OK`, `404 Not Found` |
+| **POST** | `/api/bookings` | Crea una reserva (puede iniciarse con `services: []`). | `201 Created`, `400 Bad Request` |
+| **POST** | `/api/bookings/:bid/services/:sid` | Agrega un servicio a una reserva existente (incrementa `quantity` si ya existe), validando que ambos existan. | `200 OK`, `404 Not Found` |
+
+#### Estructura del recurso `Booking`:
+```json
+{
+  "id": "a9b8c7d6-1234-5678-90ab-cdef12345678",
+  "clientName": "Juan Pérez",
+  "clientEmail": "juan.perez@example.com",
+  "date": "2026-10-20",
+  "time": "14:30",
+  "status": "pending",
+  "services": [
+    {
+      "service": "277681f4-82c7-4c78-836b-b97c265b2913",
+      "quantity": 1
+    }
+  ]
 }
 ```

@@ -1,5 +1,6 @@
 import express from "express";
 import servicesRouter from "./routes/services.router.js";
+import bookingsRouter from "./routes/bookings.router.js";
 import { rotingDetector } from "./middleware/rotingDetector.js";
 
 export const app = express();
@@ -7,8 +8,10 @@ export const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(rotingDetector);
-// Vinculación del router en la ruta base
+
+// Vinculación de routers
 app.use("/api/services", servicesRouter);
+app.use("/api/bookings", bookingsRouter);
 
 app.get("/", (req, res) => {
     res.status(200).json({

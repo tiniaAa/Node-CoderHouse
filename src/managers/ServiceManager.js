@@ -2,17 +2,21 @@ import crypto from "crypto";
 import fs from "fs/promises";
 
 class ServiceManager {
-    constructor(path) {
-        this.path= path;
+    constructor(path = "./src/data/services.json") {
+        this.path = path;
     }
 
-    async #readServices(){
-        const data = await fs.readFile(this.path,"utf-8");
-        return JSON.parse(data);
+    async #readServices() {
+        try {
+            const data = await fs.readFile(this.path, "utf-8");
+            return JSON.parse(data);
+        } catch (error) {
+            return [];
+        }
     }
 
-    async #writeServices(service){
-        await fs.writeFile(this.path,JSON.stringify(service,null,2));
+    async #writeServices(services) {
+        await fs.writeFile(this.path, JSON.stringify(services, null, 2));
     }
 
     async getServices(filters = {}) {
@@ -20,7 +24,7 @@ class ServiceManager {
 
         if (filters.category) {
             result = result.filter(service =>
-                service.category.toLowerCase() === filters.category.toLowerCase()
+                service.category && service.category.toLowerCase().trim() === filters.category.toLowerCase().trim()
             );
         }
 
@@ -29,59 +33,72 @@ class ServiceManager {
             result = result.filter(service => service.available === isAvailable);
         }
 
-        return await result;
+        return result;
     }
 
-    async getServicesById(id) {
+    async getServiceById(id) {
         const services = await this.#readServices();
         return services.find(service => service.id === id);
+    }
+
+    // Alias para compatibilidad
+    async getServicesById(id) {
+        return this.getServiceById(id);
     }
 
     async addService(serviceData) {
         const services = await this.#readServices();
         const { name, description, duration, price, category, available } = serviceData;
-        if (!name || !description || !duration || price === undefined || !category || available === undefined) {
-            throw new Error("Campos incompletos obligatorios");
-        }
-        const newService={
-            id:crypto.randomUUID(),
-            name:name,
-            description:description,
-            duration:duration,
-            price:price,
-            category:category,
-            available:available
 
+        if (!name || !description || !duration || price === undefined || !category || available === undefined) {
+            throw new Error("Campos incompletos obligatorios: name, description, duration, price, category, available");
+        }
+
+        const newService = {
+            id: crypto.randomUUID(),
+            name,
+            description,
+            duration,
+            price: Number(price),
+            category,
+            available: Boolean(available)
         };
 
         services.push(newService);
         await this.#writeServices(services);
         return newService;
-
     }
 
     async updateService(id, data) {
         const services = await this.#readServices();
-        const index = services.findIndex(service=> service.id === id);
-        if(index === -1){return null;}
-        services[index]={
-            ...services[index],
-            ...data,
-            id: services[index].id
-        }
-        await this.#writeServices(services)
-        return services[index]
-    }
-
-    async deleteService(id) {
-        const services= await this.#readServices();
         const index = services.findIndex(service => service.id === id);
+
         if (index === -1) {
             return null;
         }
-        const deletedService = services.splice(index,1)[0];
+
+        // Se actualiza el servicio protegiendo el ID original
+        services[index] = {
+            ...services[index],
+            ...data,
+            id: services[index].id
+        };
+
         await this.#writeServices(services);
-        return deletedService;
+        return services[index];
+    }
+
+    async deleteService(id) {
+        const services = await this.#readServices();
+        const index = services.findIndex(service => service.id === id);
+
+        if (index !== -1) {
+            const [deleted] = services.splice(index, 1);
+            await this.#writeServices(services);
+            return deleted;
+        }
+
+        return null;
     }
 }
 
