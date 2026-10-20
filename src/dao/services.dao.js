@@ -3,18 +3,56 @@ import { serviceModel } from "../models/service.model.js";
 
 class ServicesDao {
     async getAll(filters = {}) {
+        const {
+            category,
+            available,
+            page = 1,
+            limit = 10,
+            sortBy = "createdAt",
+            order = "desc"
+        } = filters;
+
         const query = {};
 
-        if (filters.category) {
-            query.category = { $regex: new RegExp(`^${filters.category.trim()}$`, "i") };
+        if (category) {
+            query.category = { $regex: new RegExp(`^${category.trim()}$`, "i") };
         }
 
-        if (filters.available !== undefined) {
-            query.available = filters.available === "true" || filters.available === true;
+        if (available !== undefined && available !== "") {
+            query.available = available === "true" || available === true;
         }
 
-        const services = await serviceModel.find(query).lean();
-        return services.map(s => ({ ...s, id: s._id.toString() }));
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+        const skip = (pageNum - 1) * limitNum;
+
+        const sortOptions = {};
+        const sortOrder = (order === "asc" || order === "1") ? 1 : -1;
+        sortOptions[sortBy] = sortOrder;
+
+        const [services, totalResults] = await Promise.all([
+            serviceModel.find(query)
+                .sort(sortOptions)
+                .skip(skip)
+                .limit(limitNum)
+                .lean(),
+            serviceModel.countDocuments(query)
+        ]);
+
+        const totalPages = Math.ceil(totalResults / limitNum) || 1;
+
+        return {
+            status: "success",
+            totalResults,
+            page: pageNum,
+            limit: limitNum,
+            totalPages,
+            hasPrevPage: pageNum > 1,
+            hasNextPage: pageNum < totalPages,
+            prevPage: pageNum > 1 ? pageNum - 1 : null,
+            nextPage: pageNum < totalPages ? pageNum + 1 : null,
+            results: services.map(s => ({ ...s, id: s._id.toString() }))
+        };
     }
 
     async getById(id) {

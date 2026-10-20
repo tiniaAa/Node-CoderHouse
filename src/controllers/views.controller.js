@@ -3,7 +3,9 @@ import bookingsService from "../services/bookings.service.js";
 
 export const renderServices = async (req, res) => {
     try {
-        const services = await servicesService.getServices();
+        const response = await servicesService.getServices({ limit: 50 });
+        const services = Array.isArray(response) ? response : (response.results || []);
+
         res.render("services", {
             title: "Catálogo de Servicios",
             services
@@ -19,10 +21,12 @@ export const renderServices = async (req, res) => {
 
 export const renderAvailability = async (req, res) => {
     try {
-        const [availableServices, bookings] = await Promise.all([
-            servicesService.getServices({ available: true }),
+        const [servicesResponse, bookings] = await Promise.all([
+            servicesService.getServices({ available: true, limit: 50 }),
             bookingsService.getBookings()
         ]);
+
+        const availableServices = Array.isArray(servicesResponse) ? servicesResponse : (servicesResponse.results || []);
 
         res.render("availability", {
             title: "Disponibilidad y Reservas",

@@ -21,9 +21,8 @@ io.on("connection", (socket) => {
     socket.on("new-service", async (serviceData) => {
         try {
             await servicesService.createService(serviceData);
-            // Obtener lista actualizada desde MongoDB
-            const updatedServices = await servicesService.getServices();
-            // Emitir evento a TODOS los clientes conectados para actualizar la vista sin recargar
+            const response = await servicesService.getServices({ limit: 50 });
+            const updatedServices = response.results || response;
             io.emit("services-updated", updatedServices);
         } catch (error) {
             socket.emit("service-error", error.message);
