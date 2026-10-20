@@ -1,6 +1,30 @@
+# ⚠️ TODAS LAS PRE-ENTREGAS ESTÁN DIVIDIDAS POR RAMAS EN ESTE REPOSITORIO
+
+> **Nota para la corrección:** Cada pre-entrega y avance progresivo del curso se encuentra versionado y estructurado en su propia rama dentro de este repositorio de GitHub.
+
+---
+
 # 🚀 API de Gestión de Servicios y Reservas - Sistema de Turnos
 
-API REST desarrollada con Node.js, Express y FileSystem que gestiona dos recursos principales — **servicios** y **reservas** — estructurada en tres capas (Routes, Controllers y Managers) con persistencia en archivos JSON.
+API REST desarrollada con Node.js, Express y FileSystem que gestiona dos recursos principales — **servicios** y **reservas** — profesionalizada mediante una **arquitectura en capas con DAO y Repository** con persistencia en archivos JSON.
+
+---
+
+## 🏛️ Arquitectura en Capas
+
+El flujo de información en la aplicación sigue de manera estricta la siguiente cadena de responsabilidades:
+
+```text
+Router → Controller → Service → Repository → DAO → Archivo JSON
+```
+
+| Capa | Ubicación | Responsabilidad |
+| :--- | :--- | :--- |
+| **Router** | `src/routes/` | Define los endpoints y los asocia a las funciones controladoras. No contiene lógica de negocio ni manipula datos. |
+| **Controller** | `src/controllers/` | Recibe las peticiones HTTP, extrae parámetros (`req.params`, `req.query`, `req.body`), invoca a la capa Service y responde al cliente con `res.status().json()`. |
+| **Service** | `src/services/` | Contiene todas las reglas de negocio y validaciones del sistema (ej: validación de existencia cruzada, incremento de cantidad en servicios de reservas, protección del ID). Desconoce completamente `req` y `res`. |
+| **Repository** | `src/repositories/` | Provee métodos estándar de acceso a datos (`getAll`, `getById`, `create`, `update`, `delete`) sin contener reglas de negocio, desacoplando la lógica del mecanismo de almacenamiento. |
+| **DAO** | `src/dao/` | Accede de forma directa a los archivos JSON (`fs/promises`) para lectura y escritura. No contiene lógica de negocio. |
 
 ---
 
@@ -13,17 +37,23 @@ src/
   controllers/
     services.controller.js
     bookings.controller.js
+  dao/
+    services.dao.js
+    bookings.dao.js
   data/
     services.json
     bookings.json
-  managers/
-    ServiceManager.js
-    BookingManager.js
   middleware/
     rotingDetector.js
+  repositories/
+    services.repository.js
+    bookings.repository.js
   routes/
     services.router.js
     bookings.router.js
+  services/
+    services.service.js
+    bookings.service.js
   app.js
   server.js
 package.json
@@ -31,15 +61,6 @@ package.json
 .gitignore
 README.md
 ```
-
----
-
-## 🏛️ Arquitectura en Capas
-
-El proyecto está diseñado bajo el principio de separación de responsabilidades:
-1. **Rutas (`src/routes/`)**: Definen los endpoints y los vinculan directamente con sus funciones controladoras correspondientes, sin lógica de negocio ni manejo directo de peticiones.
-2. **Controladores (`src/controllers/`)**: Reciben los objetos `req` y `res`, procesan parámetros (`params`, `query`, `body`), delegan las operaciones a los managers y devuelven las respuestas con los códigos de estado HTTP apropiados (`200`, `201`, `400`, `404`, `500`).
-3. **Managers (`src/managers/`)**: Contienen exclusivamente la lógica de negocio y persistencia en los archivos JSON (`services.json` y `bookings.json`) sin interacción con Express (`req`/`res`).
 
 ---
 

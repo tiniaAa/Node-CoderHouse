@@ -1,11 +1,9 @@
-import ServiceManager from "../managers/ServiceManager.js";
-
-const serviceManager = new ServiceManager("./src/data/services.json");
+import servicesService from "../services/services.service.js";
 
 export const getServices = async (req, res) => {
     try {
         const { category, available } = req.query;
-        const services = await serviceManager.getServices({ category, available });
+        const services = await servicesService.getServices({ category, available });
         res.status(200).json(services);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -15,7 +13,7 @@ export const getServices = async (req, res) => {
 export const getServiceById = async (req, res) => {
     try {
         const { sid } = req.params;
-        const service = await serviceManager.getServiceById(sid);
+        const service = await servicesService.getServiceById(sid);
 
         if (!service) {
             return res.status(404).json({ error: `Servicio con id ${sid} no encontrado` });
@@ -29,17 +27,18 @@ export const getServiceById = async (req, res) => {
 
 export const createService = async (req, res) => {
     try {
-        const serviceAdded = await serviceManager.addService(req.body);
+        const serviceAdded = await servicesService.createService(req.body);
         res.status(201).json({ message: "Servicio creado exitosamente", service: serviceAdded });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        const statusCode = error.statusCode || 400;
+        res.status(statusCode).json({ error: error.message });
     }
 };
 
 export const updateService = async (req, res) => {
     try {
         const { sid } = req.params;
-        const updatedService = await serviceManager.updateService(sid, req.body);
+        const updatedService = await servicesService.updateService(sid, req.body);
 
         if (!updatedService) {
             return res.status(404).json({ error: `Servicio con id ${sid} no encontrado para actualizar` });
@@ -47,14 +46,15 @@ export const updateService = async (req, res) => {
 
         res.status(200).json({ message: "Servicio actualizado exitosamente", service: updatedService });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        const statusCode = error.statusCode || 400;
+        res.status(statusCode).json({ error: error.message });
     }
 };
 
 export const deleteService = async (req, res) => {
     try {
         const { sid } = req.params;
-        const deletedService = await serviceManager.deleteService(sid);
+        const deletedService = await servicesService.deleteService(sid);
 
         if (!deletedService) {
             return res.status(404).json({ error: `Servicio con id ${sid} no encontrado para eliminar` });
