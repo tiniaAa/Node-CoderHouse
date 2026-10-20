@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}} - Sistema de Turnos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="container nav-content">
+            <h1 class="logo">Sistema de Turnos y Reservas</h1>
+            <nav>
+                <a href="/views/services" class="nav-link">Servicios</a>
+                <a href="/views/availability" class="nav-link">Disponibilidad / Reservas</a>
+                <a href="/api/services" target="_blank" class="nav-link">API Servicios</a>
+                <a href="/api/bookings" target="_blank" class="nav-link">API Reservas</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {{{body}}}
+    </main>
+
+    <footer class="footer container">
+        <p>© 2026 Sistema de Turnos y Reservas - CoderHouse Backend</p>
+    </footer>
+
+    <!-- Socket.io cliente y script personalizado -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/socket.js"></script>
+</body>
+</html>

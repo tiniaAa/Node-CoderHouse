@@ -1,0 +1,86 @@
+<section class="section">
+    <h2>Disponibilidad y Reservas</h2>
+    <p>Consulta de servicios disponibles para agendar y estado actual de las reservas registradas en el sistema.</p>
+
+    <div class="availability-container">
+        <!-- Servicios disponibles para reservar -->
+        <div class="card">
+            <h3>Servicios Activos para Turnos</h3>
+            {{#if availableServices.length}}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Servicio</th>
+                                <th>Categoría</th>
+                                <th>Duración</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each availableServices}}
+                                <tr>
+                                    <td><strong>{{this.name}}</strong></td>
+                                    <td>{{this.category}}</td>
+                                    <td>{{this.duration}}</td>
+                                    <td>${{this.price}}</td>
+                                </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                <p class="no-data">No hay servicios disponibles actualmente.</p>
+            {{/if}}
+        </div>
+
+        <!-- Reservas registradas en el sistema -->
+        <div class="card">
+            <h3>Reservas Registradas</h3>
+            {{#if bookings.length}}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Contacto</th>
+                                <th>Fecha y Hora</th>
+                                <th>Estado</th>
+                                <th>Servicios Incluidos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each bookings}}
+                                <tr>
+                                    <td><strong>{{this.clientName}}</strong></td>
+                                    <td>{{this.clientEmail}}</td>
+                                    <td>{{this.date}} - {{this.time}}</td>
+                                    <td><span class="badge badge-info">{{this.status}}</span></td>
+                                    <td>
+                                        {{#if this.services.length}}
+                                            <ul class="sub-list">
+                                                {{#each this.services}}
+                                                    <li>
+                                                        {{#if this.service.name}}
+                                                            {{this.service.name}} (x{{this.quantity}})
+                                                        {{else}}
+                                                            ID: {{this.service}} (x{{this.quantity}})
+                                                        {{/if}}
+                                                    </li>
+                                                {{/each}}
+                                            </ul>
+                                        {{else}}
+                                            <em>Sin servicios asignados</em>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                <p class="no-data">No hay reservas registradas en la base de datos.</p>
+            {{/if}}
+        </div>
+    </div>
+</section>
