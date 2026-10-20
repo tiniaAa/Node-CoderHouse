@@ -1,61 +1,47 @@
-import fs from "fs/promises";
+import mongoose from "mongoose";
+import { serviceModel } from "../models/service.model.js";
 
 class ServicesDao {
-    constructor(path = "./src/data/services.json") {
-        this.path = path;
-    }
+    async getAll(filters = {}) {
+        const query = {};
 
-    async #readFile() {
-        try {
-            const data = await fs.readFile(this.path, "utf-8");
-            return JSON.parse(data);
-        } catch (error) {
-            return [];
+        if (filters.category) {
+            query.category = { $regex: new RegExp(`^${filters.category.trim()}$`, "i") };
         }
-    }
 
-    async #writeFile(data) {
-        await fs.writeFile(this.path, JSON.stringify(data, null, 2));
-    }
+        if (filters.available !== undefined) {
+            query.available = filters.available === "true" || filters.available === true;
+        }
 
-    async getAll() {
-        return await this.#readFile();
+        const services = await serviceModel.find(query).lean();
+        return services.map(s => ({ ...s, id: s._id.toString() }));
     }
 
     async getById(id) {
-        const services = await this.#readFile();
-        return services.find(service => service.id === id) || null;
+        if (!mongoose.isValidObjectId(id)) return null;
+        const service = await serviceModel.findById(id).lean();
+        if (!service) return null;
+        return { ...service, id: service._id.toString() };
     }
 
-    async create(service) {
-        const services = await this.#readFile();
-        services.push(service);
-        await this.#writeFile(services);
-        return service;
+    async create(serviceData) {
+        const created = await serviceModel.create(serviceData);
+        const obj = created.toObject();
+        return { ...obj, id: obj._id.toString() };
     }
 
     async update(id, updateData) {
-        const services = await this.#readFile();
-        const index = services.findIndex(service => service.id === id);
-        if (index === -1) return null;
-
-        services[index] = {
-            ...services[index],
-            ...updateData
-        };
-
-        await this.#writeFile(services);
-        return services[index];
+        if (!mongoose.isValidObjectId(id)) return null;
+        const updated = await serviceModel.findByIdAndUpdate(id, updateData, { new: true }).lean();
+        if (!updated) return null;
+        return { ...updated, id: updated._id.toString() };
     }
 
     async delete(id) {
-        const services = await this.#readFile();
-        const index = services.findIndex(service => service.id === id);
-        if (index === -1) return null;
-
-        const [deleted] = services.splice(index, 1);
-        await this.#writeFile(services);
-        return deleted;
+        if (!mongoose.isValidObjectId(id)) return null;
+        const deleted = await serviceModel.findByIdAndDelete(id).lean();
+        if (!deleted) return null;
+        return { ...deleted, id: deleted._id.toString() };
     }
 }
 

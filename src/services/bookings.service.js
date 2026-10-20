@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import bookingsRepository from "../repositories/bookings.repository.js";
 import servicesRepository from "../repositories/services.repository.js";
 
@@ -26,7 +25,6 @@ class BookingsService {
         }
 
         const newBooking = {
-            id: crypto.randomUUID(),
             clientName,
             clientEmail,
             date,
@@ -39,7 +37,7 @@ class BookingsService {
     }
 
     async addServiceToBooking(bid, sid) {
-        // 1. Validar que el servicio exista en persistencia
+        // 1. Validar que el servicio exista en MongoDB
         const service = await this.serviceRepo.getById(sid);
         if (!service) {
             const error = new Error(`Servicio con id ${sid} no encontrado`);
@@ -47,7 +45,7 @@ class BookingsService {
             throw error;
         }
 
-        // 2. Validar que la reserva exista en persistencia
+        // 2. Validar que la reserva exista en MongoDB
         const booking = await this.repository.getById(bid);
         if (!booking) {
             const error = new Error(`Reserva con id ${bid} no encontrada`);
@@ -57,11 +55,16 @@ class BookingsService {
 
         // 3. Regla de negocio: Si el servicio ya está en la reserva se incrementa quantity, sino se agrega con quantity: 1
         const servicesList = Array.isArray(booking.services) ? [...booking.services] : [];
-        const serviceIndex = servicesList.findIndex(s => s.service === sid);
+        const sidStr = sid.toString();
+
+        const serviceIndex = servicesList.findIndex(s => {
+            const currentId = s.service?._id ? s.service._id.toString() : s.service?.toString();
+            return currentId === sidStr;
+        });
 
         if (serviceIndex !== -1) {
             servicesList[serviceIndex] = {
-                ...servicesList[serviceIndex],
+                service: sid,
                 quantity: servicesList[serviceIndex].quantity + 1
             };
         } else {
@@ -71,7 +74,12 @@ class BookingsService {
             });
         }
 
-        return await this.repository.update(bid, { services: servicesList });
+        const formattedServices = servicesList.map(s => ({
+            service: s.service?._id || s.service,
+            quantity: s.quantity
+        }));
+
+        return await this.repository.update(bid, { services: formattedServices });
     }
 }
 

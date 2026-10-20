@@ -6,25 +6,51 @@
 
 # 🚀 API de Gestión de Servicios y Reservas - Sistema de Turnos
 
-API REST desarrollada con Node.js, Express y FileSystem que gestiona dos recursos principales — **servicios** y **reservas** — profesionalizada mediante una **arquitectura en capas con DAO y Repository** con persistencia en archivos JSON.
+API REST desarrollada con Node.js, Express y **MongoDB Atlas con Mongoose**, que gestiona los recursos de **servicios**, **reservas** y **mensajes**, estructurada bajo una **arquitectura en capas con DAO y Repository**.
 
 ---
 
 ## 🏛️ Arquitectura en Capas
 
-El flujo de información en la aplicación sigue de manera estricta la siguiente cadena de responsabilidades:
+El flujo de información en la aplicación desacopla por completo la lógica de negocio del motor de persistencia:
 
 ```text
-Router → Controller → Service → Repository → DAO → Archivo JSON
+Router → Controller → Service → Repository → DAO → MongoDB Atlas (Mongoose)
 ```
 
 | Capa | Ubicación | Responsabilidad |
 | :--- | :--- | :--- |
-| **Router** | `src/routes/` | Define los endpoints y los asocia a las funciones controladoras. No contiene lógica de negocio ni manipula datos. |
-| **Controller** | `src/controllers/` | Recibe las peticiones HTTP, extrae parámetros (`req.params`, `req.query`, `req.body`), invoca a la capa Service y responde al cliente con `res.status().json()`. |
-| **Service** | `src/services/` | Contiene todas las reglas de negocio y validaciones del sistema (ej: validación de existencia cruzada, incremento de cantidad en servicios de reservas, protección del ID). Desconoce completamente `req` y `res`. |
-| **Repository** | `src/repositories/` | Provee métodos estándar de acceso a datos (`getAll`, `getById`, `create`, `update`, `delete`) sin contener reglas de negocio, desacoplando la lógica del mecanismo de almacenamiento. |
-| **DAO** | `src/dao/` | Accede de forma directa a los archivos JSON (`fs/promises`) para lectura y escritura. No contiene lógica de negocio. |
+| **Router** | `src/routes/` | Define los endpoints y los asocia a las funciones del controller. |
+| **Controller** | `src/controllers/` | Recibe las peticiones HTTP (`params`, `query`, `body`), invoca a la capa Service y responde al cliente con `res.status().json()`. |
+| **Service** | `src/services/` | Contiene todas las reglas de negocio (validación cruzada, incremento de cantidad en servicios de reservas, etc.). Desconoce `req` y `res`. |
+| **Repository** | `src/repositories/` | Provee métodos estándar de acceso a datos (`getAll`, `getById`, `create`, `update`, `delete`) sin contener reglas de negocio. |
+| **DAO** | `src/dao/` | Realiza las consultas directas a las colecciones de MongoDB Atlas utilizando los modelos de Mongoose. |
+| **Models** | `src/models/` | Define los esquemas y modelos de datos de Mongoose (`service.model.js`, `booking.model.js`, `message.model.js`). |
+
+---
+
+## 🗄️ Modelos de Mongoose (`src/models/`)
+
+1. **`service.model.js`**:
+   - `name`: String (requerido)
+   - `description`: String (requerido)
+   - `duration`: String (requerido)
+   - `price`: Number (requerido)
+   - `category`: String (requerido)
+   - `available`: Boolean (default: true)
+
+2. **`booking.model.js`**:
+   - `clientName`: String (requerido)
+   - `clientEmail`: String (requerido)
+   - `date`: String (requerido)
+   - `time`: String (requerido)
+   - `status`: String (default: "pending")
+   - `services`: Referenciados mediante `ObjectId` con formato `[{ service: ObjectId, quantity: Number }]`
+
+3. **`message.model.js`**:
+   - `user`: String (requerido)
+   - `message`: String (requerido)
+   - `timestamp`: Date (default: Date.now)
 
 ---
 
@@ -33,6 +59,7 @@ Router → Controller → Service → Repository → DAO → Archivo JSON
 ```text
 src/
   config/
+    db.config.js
     env.config.js
   controllers/
     services.controller.js
@@ -40,11 +67,12 @@ src/
   dao/
     services.dao.js
     bookings.dao.js
-  data/
-    services.json
-    bookings.json
   middleware/
     rotingDetector.js
+  models/
+    service.model.js
+    booking.model.js
+    message.model.js
   repositories/
     services.repository.js
     bookings.repository.js
@@ -81,6 +109,7 @@ README.md
    ```env
    PORT=3000
    NODE_ENV=development
+   MONGO_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority
    ```
 
 ---
@@ -108,24 +137,11 @@ README.md
 
 | Método | Endpoint | Descripción | Códigos HTTP |
 | :--- | :--- | :--- | :--- |
-| **GET** | `/api/services` | Devuelve todos los servicios. Acepta filtros por query params (`?category=...`, `?available=true\|false`). | `200 OK`, `500 Internal Server Error` |
-| **GET** | `/api/services/:sid` | Devuelve un servicio por su ID. | `200 OK`, `404 Not Found` |
-| **POST** | `/api/services` | Crea un servicio con datos del body. El `id` se genera automáticamente. | `201 Created`, `400 Bad Request` |
-| **PUT** | `/api/services/:sid` | Actualiza un servicio sin permitir modificar su `id`. | `200 OK`, `400 Bad Request`, `404 Not Found` |
-| **DELETE** | `/api/services/:sid` | Elimina un servicio por su `id`. | `200 OK`, `404 Not Found` |
-
-#### Estructura del recurso `Service`:
-```json
-{
-  "id": "277681f4-82c7-4c78-836b-b97c265b2913",
-  "name": "Consulta Médica",
-  "description": "Atención médica general",
-  "duration": "30 minutos",
-  "price": 3000,
-  "category": "Salud",
-  "available": true
-}
-```
+| **GET** | `/api/services` | Devuelve todos los servicios de la base de datos (acepta filtros `?category=...`, `?available=true\|false`). | `200 OK`, `500 Internal Server Error` |
+| **GET** | `/api/services/:sid` | Devuelve un servicio por su `ObjectId`. | `200 OK`, `404 Not Found` |
+| **POST** | `/api/services` | Crea un servicio en MongoDB Atlas. | `201 Created`, `400 Bad Request` |
+| **PUT** | `/api/services/:sid` | Actualiza un servicio sin permitir modificar su `_id`. | `200 OK`, `400 Bad Request`, `404 Not Found` |
+| **DELETE** | `/api/services/:sid` | Elimina un servicio de la base de datos. | `200 OK`, `404 Not Found` |
 
 ---
 
@@ -133,25 +149,7 @@ README.md
 
 | Método | Endpoint | Descripción | Códigos HTTP |
 | :--- | :--- | :--- | :--- |
-| **GET** | `/api/bookings` | Devuelve todas las reservas creadas. | `200 OK`, `500 Internal Server Error` |
-| **GET** | `/api/bookings/:bid` | Devuelve una reserva específica por su ID. | `200 OK`, `404 Not Found` |
+| **GET** | `/api/bookings` | Devuelve todas las reservas con servicios poblados (`populate`). | `200 OK`, `500 Internal Server Error` |
+| **GET** | `/api/bookings/:bid` | Devuelve una reserva específica con servicios poblados por su ID. | `200 OK`, `404 Not Found` |
 | **POST** | `/api/bookings` | Crea una reserva (puede iniciarse con `services: []`). | `201 Created`, `400 Bad Request` |
-| **POST** | `/api/bookings/:bid/services/:sid` | Agrega un servicio a una reserva existente (incrementa `quantity` si ya existe), validando que ambos existan. | `200 OK`, `404 Not Found` |
-
-#### Estructura del recurso `Booking`:
-```json
-{
-  "id": "a9b8c7d6-1234-5678-90ab-cdef12345678",
-  "clientName": "Juan Pérez",
-  "clientEmail": "juan.perez@example.com",
-  "date": "2026-10-20",
-  "time": "14:30",
-  "status": "pending",
-  "services": [
-    {
-      "service": "277681f4-82c7-4c78-836b-b97c265b2913",
-      "quantity": 1
-    }
-  ]
-}
-```
+| **POST** | `/api/bookings/:bid/services/:sid` | Agrega un servicio referenciado por `ObjectId` a una reserva existente (incrementa `quantity` si ya existe), validando que ambos existan. | `200 OK`, `404 Not Found` |

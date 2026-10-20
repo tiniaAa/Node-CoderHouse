@@ -1,51 +1,32 @@
-import fs from "fs/promises";
+import mongoose from "mongoose";
+import { bookingModel } from "../models/booking.model.js";
 
 class BookingsDao {
-    constructor(path = "./src/data/bookings.json") {
-        this.path = path;
-    }
-
-    async #readFile() {
-        try {
-            const data = await fs.readFile(this.path, "utf-8");
-            return JSON.parse(data);
-        } catch (error) {
-            return [];
-        }
-    }
-
-    async #writeFile(data) {
-        await fs.writeFile(this.path, JSON.stringify(data, null, 2));
-    }
-
     async getAll() {
-        return await this.#readFile();
+        const bookings = await bookingModel.find().populate("services.service").lean();
+        return bookings.map(b => ({ ...b, id: b._id.toString() }));
     }
 
     async getById(id) {
-        const bookings = await this.#readFile();
-        return bookings.find(booking => booking.id === id) || null;
+        if (!mongoose.isValidObjectId(id)) return null;
+        const booking = await bookingModel.findById(id).populate("services.service").lean();
+        if (!booking) return null;
+        return { ...booking, id: booking._id.toString() };
     }
 
-    async create(booking) {
-        const bookings = await this.#readFile();
-        bookings.push(booking);
-        await this.#writeFile(bookings);
-        return booking;
+    async create(bookingData) {
+        const created = await bookingModel.create(bookingData);
+        const obj = created.toObject();
+        return { ...obj, id: obj._id.toString() };
     }
 
     async update(id, updateData) {
-        const bookings = await this.#readFile();
-        const index = bookings.findIndex(booking => booking.id === id);
-        if (index === -1) return null;
-
-        bookings[index] = {
-            ...bookings[index],
-            ...updateData
-        };
-
-        await this.#writeFile(bookings);
-        return bookings[index];
+        if (!mongoose.isValidObjectId(id)) return null;
+        const updated = await bookingModel.findByIdAndUpdate(id, updateData, { new: true })
+            .populate("services.service")
+            .lean();
+        if (!updated) return null;
+        return { ...updated, id: updated._id.toString() };
     }
 }
 

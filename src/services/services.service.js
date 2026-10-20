@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import servicesRepository from "../repositories/services.repository.js";
 
 class ServicesService {
@@ -7,20 +6,7 @@ class ServicesService {
     }
 
     async getServices(filters = {}) {
-        let services = await this.repository.getAll();
-
-        if (filters.category) {
-            services = services.filter(service =>
-                service.category && service.category.toLowerCase().trim() === filters.category.toLowerCase().trim()
-            );
-        }
-
-        if (filters.available !== undefined) {
-            const isAvailable = filters.available === "true" || filters.available === true;
-            services = services.filter(service => service.available === isAvailable);
-        }
-
-        return services;
+        return await this.repository.getAll(filters);
     }
 
     async getServiceById(id) {
@@ -37,7 +23,6 @@ class ServicesService {
         }
 
         const newService = {
-            id: crypto.randomUUID(),
             name,
             description,
             duration,
@@ -54,10 +39,9 @@ class ServicesService {
         if (!existing) return null;
 
         // Regla de negocio: No se puede modificar el id
-        const updatePayload = {
-            ...data,
-            id: existing.id
-        };
+        const updatePayload = { ...data };
+        delete updatePayload.id;
+        delete updatePayload._id;
 
         return await this.repository.update(id, updatePayload);
     }
